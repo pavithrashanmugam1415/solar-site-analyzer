@@ -1,0 +1,41 @@
+.cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card span { color: #666; font-size: 13px; }
+.card strong { font-size: 26px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-width: 0;
+}
+.box.wide { grid-column: 1 / -1; }
+.box h3 { margin-top: 0; font-size: 16px; }
+.chart-short { position: relative; height: 260px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
+th { color: #555; font-weight: 600; }
+.badge { padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+
+.weight { display: grid; grid-template-columns: 130px 1fr 44px; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+label input[type='number'] { display: block; margin-top: 6px; padding: 6px; width: 140px; border: 1px solid #ccc; border-radius: 4px; }
+.error { color: #c62828; }
+.message { color: #1f6f3f; font-size: 14px; }
+
+@media (max-width: 900px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .grid { grid-template-columns: 1fr; }
+}

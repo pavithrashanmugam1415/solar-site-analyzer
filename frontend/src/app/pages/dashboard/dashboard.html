@@ -1,0 +1,103 @@
+@if (error()) {
+  <p class="error">{{ error() }}</p>
+}
+
+<!-- Summary cards -->
+@if (stats(); as s) {
+  <section class="cards">
+    <div class="card"><span>Total sites</span><strong>{{ s.summary.total_sites }}</strong></div>
+    <div class="card"><span>Average score</span><strong>{{ s.summary.average_score | number: '1.1-1' }}</strong></div>
+    <div class="card"><span>Highest</span><strong>{{ s.summary.max_score | number: '1.1-1' }}</strong></div>
+    <div class="card"><span>Lowest</span><strong>{{ s.summary.min_score | number: '1.1-1' }}</strong></div>
+    <div class="card"><span>Std deviation</span><strong>{{ s.summary.std_dev | number: '1.1-1' }}</strong></div>
+  </section>
+}
+
+<!-- Charts (canvases always exist so Chart.js can draw into them) -->
+<section class="grid">
+  <div class="box">
+    <h3>Sites per score category</h3>
+    <canvas #categoryCanvas></canvas>
+  </div>
+  <div class="box">
+    <h3>Average score by land type</h3>
+    <canvas #landTypeCanvas></canvas>
+  </div>
+  <div class="box wide">
+    <h3>Average score of each factor across all sites</h3>
+    <div class="chart-short"><canvas #factorCanvas></canvas></div>
+  </div>
+</section>
+
+<section class="grid">
+  <!-- Top 10 table -->
+  <div class="box wide">
+    <h3>Top 10 recommended sites</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Site</th><th>Land type</th><th>Area (m²)</th>
+            <th>Solar</th><th>Grid (km)</th><th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (site of stats()?.top_10 ?? []; track site.site_id; let i = $index) {
+            <tr>
+              <td>{{ i + 1 }}</td>
+              <td>{{ site.site_name }}</td>
+              <td>{{ site.land_type }}</td>
+              <td>{{ site.area_sqm | number }}</td>
+              <td>{{ site.solar_irradiance_kwh }}</td>
+              <td>{{ site.grid_distance_km }}</td>
+              <td>
+                <span class="badge" [style.background]="colorFor(site.category)">
+                  {{ site.total_score | number: '1.2-2' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Weights form -->
+  <div class="box">
+    <h3>Adjust weights and recalculate</h3>
+    @for (key of weightKeys; track key) {
+      <label class="weight">
+        <span>{{ weightLabels[key] }}</span>
+        <input type="range" min="0" max="1" step="0.05"
+               [ngModel]="weights()[key]" (ngModelChange)="setWeight(key, $event)" />
+        <strong>{{ weights()[key] | number: '1.2-2' }}</strong>
+      </label>
+    }
+    <p [class.error]="!weightsValid()">
+      Total: <strong>{{ weightTotal() | number: '1.2-2' }}</strong>
+      @if (!weightsValid()) { (must be exactly 1.00) }
+    </p>
+    <div class="actions">
+      <button type="button" (click)="recalculate()" [disabled]="!weightsValid() || saving()">
+        {{ saving() ? 'Recalculating...' : 'Recalculate scores' }}
+      </button>
+      <button type="button" class="secondary" (click)="resetWeights()">Reset to default</button>
+    </div>
+    @if (message()) {
+      <p class="message">{{ message() }}</p>
+    }
+  </div>
+
+  <!-- Export -->
+  <div class="box">
+    <h3>Export results</h3>
+    <label>
+      Minimum score (optional)
+      <input type="number" min="0" max="100" [(ngModel)]="exportMinScore" placeholder="e.g. 70" />
+    </label>
+    <div class="actions">
+      <button type="button" (click)="download('csv')">Download CSV</button>
+      <button type="button" (click)="download('json')">Download JSON</button>
+    </div>
+  </div>
+</section>

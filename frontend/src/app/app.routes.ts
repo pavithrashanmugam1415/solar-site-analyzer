@@ -12,5 +12,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/map-page/map-page').then((m) => m.MapPage),
     title: 'Map | Solar Site Analyzer',
   },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.Dashboard),
+    title: 'Dashboard | Solar Site Analyzer',
+  },
   { path: '**', redirectTo: 'map' },
 ];
