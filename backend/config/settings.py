@@ -47,7 +47,17 @@ INSTALLED_APPS = [
     'solar',
 ]
 
+# MIDDLEWARE = [
+#     'django.middleware.security.SecurityMiddleware',
+#     'django.contrib.sessions.middleware.SessionMiddleware',
+#     'django.middleware.common.CommonMiddleware',
+#     'django.middleware.csrf.CsrfViewMiddleware',
+#     'django.contrib.auth.middleware.AuthenticationMiddleware',
+#     'django.contrib.messages.middleware.MessageMiddleware',
+#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+# ]
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,7 +68,11 @@ MIDDLEWARE = [
 ]
 
 # 25Nov26 Allow only our Angular app (port 4200) to call the API
-CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
+# CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:4200',
+    'http://127.0.0.1:4200',
+]
 
 ROOT_URLCONF = 'config.urls'
 
@@ -148,7 +162,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     # Our export API uses ?format=csv|json itself, so turn off DRF's own ?format= handling
     "URL_FORMAT_OVERRIDE": None,
-    # Default page size for ?limit=&offset= on GET /api/sites
+    # Pagination for ?limit=&offset= on GET /api/sites
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 50,
     # Send decimals as numbers (100.0), not strings ("100.00")
     "COERCE_DECIMAL_TO_STRING": False,

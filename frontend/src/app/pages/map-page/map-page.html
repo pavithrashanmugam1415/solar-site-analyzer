@@ -1,0 +1,110 @@
+<section class="map-layout">
+  <!-- Left panel: filters + site list -->
+  <aside class="panel">
+    <h2>Filter sites</h2>
+
+    <label>
+      Minimum score: <strong>{{ minScore }}</strong>
+      <input type="range" min="0" max="100" step="5" [(ngModel)]="minScore" (change)="loadSites()" />
+    </label>
+
+    <label>
+      Land type
+      <select [(ngModel)]="landType" (change)="loadSites()">
+        <option value="">All</option>
+        @for (type of allLandTypes(); track type) {
+          <option [value]="type">{{ type }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Sort by
+      <select [(ngModel)]="ordering" (change)="loadSites()">
+        <option value="-score">Score (high to low)</option>
+        <option value="score">Score (low to high)</option>
+        <option value="-area">Area (large to small)</option>
+        <option value="-solar">Solar irradiance (high to low)</option>
+        <option value="grid_distance">Grid distance (near to far)</option>
+        <option value="slope">Slope (flat to steep)</option>
+        <option value="name">Name (A to Z)</option>
+      </select>
+    </label>
+
+    <button type="button" class="secondary" (click)="clearFilters()">Clear filters</button>
+
+    <p class="count">
+      @if (loading()) { Loading... } @else { {{ siteCount() }} sites shown }
+    </p>
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <ul class="site-list">
+      @for (site of sites(); track site.site_id) {
+        <li (click)="selectSite(site.site_id)" [class.active]="selected()?.site_id === site.site_id">
+          <span class="dot" [style.background]="colorFor(site.category)"></span>
+          <span class="name">{{ site.site_name }}</span>
+          <span class="score">{{ site.total_score | number: '1.1-1' }}</span>
+        </li>
+      }
+    </ul>
+  </aside>
+
+  <!-- Map -->
+  <div class="map-wrap">
+    <div id="site-map"></div>
+
+    <div class="legend">
+      @for (cat of categories; track cat) {
+        <span><span class="dot" [style.background]="categoryColors[cat]"></span>{{ cat }}</span>
+      }
+    </div>
+
+    <!-- Detail card for the clicked site -->
+    @if (selected(); as site) {
+      <div class="detail">
+        <button type="button" class="close" (click)="closeDetail()" aria-label="Close">×</button>
+        <h3>{{ site.site_name }}</h3>
+        <p class="muted">{{ site.land_type }} · {{ site.region }}</p>
+
+        @if (site.analysis; as a) {
+          <p class="total">
+            <span class="badge" [style.background]="colorFor(a.category)">{{ a.category }}</span>
+            <strong>{{ a.total_score | number: '1.2-2' }}</strong> / 100
+            <span class="muted">· Rank {{ a.rank }} of {{ a.total_sites }}</span>
+          </p>
+
+          <table>
+            <thead>
+              <tr><th>Factor</th><th>Score</th><th>Weight</th><th>Points</th></tr>
+            </thead>
+            <tbody>
+              @for (item of a.breakdown; track item.factor) {
+                <tr>
+                  <td class="cap">{{ item.factor }}</td>
+                  <td>
+                    <div class="bar"><div [style.width.%]="item.score"></div></div>
+                    {{ item.score | number: '1.0-1' }}
+                  </td>
+                  <td>{{ item.weight }}</td>
+                  <td>{{ item.weighted_score | number: '1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <dl>
+          <dt>Solar irradiance</dt><dd>{{ site.solar_irradiance_kwh }} kWh/m²/day</dd>
+          <dt>Area</dt><dd>{{ site.area_sqm | number }} m²</dd>
+          <dt>Grid distance</dt><dd>{{ site.grid_distance_km }} km</dd>
+          <dt>Slope</dt><dd>{{ site.slope_degrees }}°</dd>
+          <dt>Road distance</dt><dd>{{ site.road_distance_km }} km</dd>
+          <dt>Elevation</dt><dd>{{ site.elevation_m }} m</dd>
+          <dt>Location</dt><dd>{{ site.latitude }}, {{ site.longitude }}</dd>
+        </dl>
+      </div>
+    }
+  </div>
+</section>
