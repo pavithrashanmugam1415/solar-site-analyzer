@@ -104,3 +104,16 @@ def calculate_scores(site, weights=None):
     result = {key: round(value, 2) for key, value in scores.items()}
     result["total"] = round(total, 2)
     return result
+
+
+def score_category(total):
+    """Label a total score, using the bands from the reference document."""
+    if total >= 80:
+        return "Excellent"
+    if total >= 60:
+        return "Good"
+    if total >= 40:
+        return "Fair"
+    if total >= 20:
+        return "Poor"
+    return "Very Poor"

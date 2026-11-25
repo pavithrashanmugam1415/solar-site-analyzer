@@ -142,3 +142,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+REST_FRAMEWORK = {
+    # Our export API uses ?format=csv|json itself, so turn off DRF's own ?format= handling
+    "URL_FORMAT_OVERRIDE": None,
+    # Default page size for ?limit=&offset= on GET /api/sites
+    "PAGE_SIZE": 50,
+    # Send decimals as numbers (100.0), not strings ("100.00")
+    "COERCE_DECIMAL_TO_STRING": False,
+}

@@ -68,3 +68,70 @@ class WeightValidationTests(SimpleTestCase):
         errors = validate_weights({"solar": -0.1})
         self.assertTrue(any("Missing" in e for e in errors))
         self.assertTrue(any("between 0 and 1" in e for e in errors))
+
+
+
+
+from django.urls import reverse
+from rest_framework.test import APITestCase
+
+from .models import Site
+from .services import run_analysis
+
+
+class ApiTests(APITestCase):
+    """API tests run on a temporary test database with 2 sites."""
+
+    def setUp(self):
+        base = dict(latitude=11.0, longitude=77.0, elevation_m=300,
+                    land_type="Agricultural", region="Tamil Nadu")
+        Site.objects.create(site_id=1, site_name="Perfect site", area_sqm=95000,
+                            solar_irradiance_kwh=6.2, grid_distance_km=0.5,
+                            slope_degrees=0.8, road_distance_km=0.2, **base)
+        Site.objects.create(site_id=2, site_name="Weak site", area_sqm=15000,
+                            solar_irradiance_kwh=4.2, grid_distance_km=15.2,
+                            slope_degrees=18.5, road_distance_km=5.5, **base)
+        run_analysis()
+
+    def test_list_sites_sorted_by_score(self):
+        response = self.client.get(reverse("site-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(response.data["results"][0]["site_name"], "Perfect site")
+
+    def test_min_score_filter(self):
+        response = self.client.get(reverse("site-list"), {"min_score": 90})
+        self.assertEqual(response.data["count"], 1)
+
+    def test_invalid_min_score_returns_400(self):
+        response = self.client.get(reverse("site-list"), {"min_score": "abc"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_site_detail_and_404(self):
+        response = self.client.get(reverse("site-detail", args=[1]))
+        self.assertEqual(response.data["analysis"]["total_score"], 100.0)
+        self.assertEqual(response.data["analysis"]["rank"], 1)
+        self.assertEqual(self.client.get(reverse("site-detail", args=[999])).status_code, 404)
+
+    def test_analyze_with_bad_weights_returns_400(self):
+        response = self.client.post(reverse("analyze"),
+                                    {"weights": {"solar": 0.9, "area": 0.9}}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_analyze_with_custom_weights(self):
+        weights = {"solar": 1.0, "area": 0, "grid": 0, "slope": 0, "infrastructure": 0}
+        response = self.client.post(reverse("analyze"), {"weights": weights}, format="json")
+        self.assertEqual(response.status_code, 200)
+        weak = self.client.get(reverse("site-detail", args=[2])).data
+        self.assertEqual(weak["analysis"]["total_score"], 48.0)
+
+    def test_statistics(self):
+        response = self.client.get(reverse("statistics"))
+        self.assertEqual(response.data["summary"]["total_sites"], 2)
+        self.assertEqual(response.data["summary"]["max_score"], 100.0)
+
+    def test_export_csv(self):
+        response = self.client.get(reverse("export"), {"format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response["Content-Type"])
+        self.assertIn("Perfect site", response.content.decode())

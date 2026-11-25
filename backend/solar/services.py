@@ -5,6 +5,9 @@ from django.db import transaction
 from .models import AnalysisParameter, AnalysisResult, Site
 from .scoring import DEFAULT_WEIGHTS, calculate_scores
 
+# 25Nov26
+from django.db.models import Max
+
 # Maps our short weight keys to the parameter names stored in MySQL
 PARAMETER_NAMES = {
     "solar": "solar_irradiance_weight",
@@ -49,3 +52,24 @@ def run_analysis(weights=None):
         ))
     AnalysisResult.objects.bulk_create(results)
     return len(results)
+
+
+def latest_results():
+    """
+    The newest AnalysisResult for each site (one row per site).
+    Every analysis run adds new rows, so we pick the highest result_id per site.
+    """
+    latest_ids = (
+        AnalysisResult.objects.values("site_id")
+        .annotate(latest_id=Max("result_id"))
+        .values("latest_id")
+    )
+    return AnalysisResult.objects.filter(result_id__in=latest_ids).select_related("site")
+
+
+def save_weights(weights):
+    """Store custom weights as the current weights in analysis_parameters."""
+    for key, name in PARAMETER_NAMES.items():
+        AnalysisParameter.objects.update_or_create(
+            parameter_name=name, defaults={"weight_value": weights[key], "is_active": True}
+        )
